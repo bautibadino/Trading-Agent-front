@@ -107,58 +107,83 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Total Files */}
+          {/* Total Symbols */}
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-purple-500/20 rounded-lg">
                 <Database className="w-6 h-6 text-purple-400" />
               </div>
             </div>
-            <h3 className="text-sm font-medium text-gray-400 mb-1">Archivos de Logs</h3>
+            <h3 className="text-sm font-medium text-gray-400 mb-1">Símbolos</h3>
             <p className="text-2xl font-bold text-white">
-              {stats ? Object.values(stats.stats).reduce((acc, s) => acc + s.files, 0) : '-'}
+              {stats ? stats.stats.symbols.length : '-'}
             </p>
           </div>
 
-          {/* Total Data */}
+          {/* Total Records */}
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-emerald-500/20 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-emerald-400" />
               </div>
             </div>
-            <h3 className="text-sm font-medium text-gray-400 mb-1">Datos Totales</h3>
+            <h3 className="text-sm font-medium text-gray-400 mb-1">Total Registros</h3>
             <p className="text-2xl font-bold text-white">
-              {stats ? Object.values(stats.stats).reduce((acc, s) => acc + s.totalLines, 0).toLocaleString() : '-'}
+              {stats ? stats.stats.total.toLocaleString() : '-'}
             </p>
           </div>
         </div>
 
-        {/* Timeframes Stats */}
-        {stats && (
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-6">Estadísticas por Timeframe</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(stats.stats).map(([timeframe, data]) => (
-                <div key={timeframe} className="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-white">{timeframe}</h3>
-                    <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">
-                      {data.files} archivos
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Líneas:</span>
-                      <span className="text-white font-medium">{data.totalLines.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Tamaño:</span>
-                      <span className="text-white font-medium">{data.totalSizeMB} MB</span>
+        {/* Database Stats */}
+        {stats && stats.stats.total > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Symbols Stats */}
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
+              <h2 className="text-2xl font-bold text-white mb-6">Datos por Símbolo</h2>
+              <div className="space-y-3">
+                {stats.stats.symbols.map((item) => (
+                  <div key={item.symbol} className="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-white">{item.symbol}</h3>
+                      <span className="text-sm bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full font-medium">
+                        {item.count.toLocaleString()} registros
+                      </span>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+
+            {/* Timeframes Stats */}
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
+              <h2 className="text-2xl font-bold text-white mb-6">Datos por Timeframe</h2>
+              <div className="space-y-3">
+                {stats.stats.timeframes.map((item) => (
+                  <div key={item.timeframe} className="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-white">{item.timeframe}</h3>
+                      <span className="text-sm bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full font-medium">
+                        {item.count.toLocaleString()} registros
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* No Data Message */}
+        {stats && stats.stats.total === 0 && (
+          <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-xl p-6 mb-8">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-yellow-400" />
+              <div>
+                <h3 className="text-yellow-300 font-semibold mb-1">No hay datos todavía</h3>
+                <p className="text-yellow-200/80 text-sm">
+                  Inicia un collector para comenzar a recopilar datos de mercado en PostgreSQL
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -171,8 +196,8 @@ export default function DashboardPage() {
           </Link>
 
           <Link href="/logs" className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl p-6 hover:shadow-lg hover:shadow-purple-500/20 transition-all">
-            <h3 className="text-xl font-bold text-white mb-2">Explorar Logs</h3>
-            <p className="text-purple-100">Revisa el historial de datos</p>
+            <h3 className="text-xl font-bold text-white mb-2">Market Data</h3>
+            <p className="text-purple-100">Explora datos desde PostgreSQL</p>
           </Link>
 
           <Link href="/collectors" className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl p-6 hover:shadow-lg hover:shadow-amber-500/20 transition-all">

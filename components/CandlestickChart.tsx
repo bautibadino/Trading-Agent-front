@@ -80,7 +80,7 @@ export default function CandlestickChart({ data, symbol }: CandlestickChartProps
 
     // Convertir datos al formato requerido
     const chartData: CandlestickData[] = data.map((candle) => ({
-      time: Math.floor(candle.timestamp / 1000) as any,
+      time: Math.floor(new Date(candle.timestamp).getTime() / 1000) as any,
       open: candle.open,
       high: candle.high,
       low: candle.low,
