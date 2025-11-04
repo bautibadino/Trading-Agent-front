@@ -1,5 +1,17 @@
 import axios, { AxiosInstance } from 'axios';
 
+// Tipos auxiliares para charts (construidos a partir de MarketData)
+export interface Candle {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  symbol?: string;
+  interval?: string;
+}
+
 // Tipos de datos - Market Data desde Prisma
 export interface MarketData {
   id: number;

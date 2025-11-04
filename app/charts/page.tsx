@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { apiClient, Candle, LogEntry } from '@/lib/api/client';
+import { useEffect, useState, useCallback } from 'react';
+import { apiClient, Candle, MarketData } from '@/lib/api/client';
 import CandlestickChart from '@/components/CandlestickChart';
 import Link from 'next/link';
 import { RefreshCw, AlertCircle } from 'lucide-react';
@@ -16,11 +16,7 @@ export default function ChartsPage() {
   const timeframes = ['1m', '5m', '15m', '30m', '1h', '4h'];
   const symbols = ['ETHUSDT', 'BTCUSDT'];
 
-  useEffect(() => {
-    loadChartData();
-  }, [timeframe, symbol]);
-
-  const loadChartData = async () => {
+  const loadChartData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -28,31 +24,34 @@ export default function ChartsPage() {
       const response = await apiClient.getLogs({
         timeframe,
         symbol,
-        limit: 500, // Últimas 500 velas
+        limit: 500, // Últimas 500 registros
       });
 
-      // Extraer velas de los logs
-      const extractedCandles: Candle[] = response.logs
-        .filter((log: LogEntry) => log.candle)
-        .map((log: LogEntry) => ({
-          timestamp: log.timestamp,
-          open: log.candle!.open,
-          high: log.candle!.high,
-          low: log.candle!.low,
-          close: log.candle!.close,
-          volume: log.candle!.volume,
-          symbol: log.symbol,
-          interval: log.interval,
-        }));
+      // Convertir MarketData a Candles
+      // Usamos high24h, low24h y lastPrice para simular OHLC
+      const extractedCandles: Candle[] = response.logs.map((data: MarketData) => ({
+        timestamp: data.timestamp,
+        open: data.lastPrice * 0.9995, // Aproximación
+        high: data.high24h,
+        low: data.low24h,
+        close: data.lastPrice,
+        volume: data.volume24h,
+        symbol: data.symbol,
+        interval: data.timeframe,
+      }));
 
       setCandles(extractedCandles);
     } catch (err) {
-      setError('Error al cargar datos del gráfico');
+      setError('Error al cargar datos del gráfico. Los gráficos requieren datos históricos completos.');
       console.error('Error loading chart data:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeframe, symbol]);
+
+  useEffect(() => {
+    loadChartData();
+  }, [loadChartData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -63,9 +62,20 @@ export default function ChartsPage() {
             ← Volver al inicio
           </Link>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 text-transparent bg-clip-text">
-            Gráficos de Velas
+            Gráficos de Mercado
           </h1>
-          <p className="text-gray-400 mt-2">Visualización de datos de mercado en tiempo real</p>
+          <p className="text-gray-400 mt-2">Visualización de datos desde PostgreSQL</p>
+        </div>
+
+        {/* Info Alert */}
+        <div className="bg-blue-900/20 border border-blue-500/50 rounded-xl p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-200/80">
+              <strong>Nota:</strong> Los gráficos actualmente muestran una aproximación basada en los datos de market data. 
+              Para gráficos de velas precisos, considera usar los datos high24h/low24h o implementar un endpoint específico para OHLC.
+            </div>
+          </div>
         </div>
 
         {/* Controls */}
@@ -140,7 +150,7 @@ export default function ChartsPage() {
                 <div>
                   <h2 className="text-xl font-bold text-white">{symbol}</h2>
                   <p className="text-sm text-gray-400">
-                    {candles.length} velas • Timeframe: {timeframe}
+                    {candles.length} registros • Timeframe: {timeframe}
                   </p>
                 </div>
                 {candles.length > 0 && (
@@ -160,7 +170,7 @@ export default function ChartsPage() {
                 <AlertCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <p className="text-gray-400">No hay datos disponibles para mostrar</p>
                 <p className="text-gray-500 text-sm mt-2">
-                  Intenta con otro timeframe o símbolo, o inicia un collector
+                  Inicia un collector para generar datos de mercado
                 </p>
               </div>
             </div>
@@ -170,4 +180,3 @@ export default function ChartsPage() {
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiClient, MarketData } from '@/lib/api/client';
 import Link from 'next/link';
 import { RefreshCw, AlertCircle, TrendingUp, TrendingDown, Activity, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -19,13 +19,7 @@ export default function LogsPage() {
   const timeframes = ['1m', '5m', '15m', '30m', '1h', '4h'];
   const symbols = ['ETHUSDT', 'BTCUSDT'];
 
-  useEffect(() => {
-    if (timeframe && symbol) {
-      loadLogs();
-    }
-  }, [timeframe, symbol, limit, offset]);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -45,7 +39,13 @@ export default function LogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeframe, symbol, limit, offset]);
+
+  useEffect(() => {
+    if (timeframe && symbol) {
+      loadLogs();
+    }
+  }, [timeframe, symbol, loadLogs]);
 
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString('es-ES', {
